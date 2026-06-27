@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "name": "MSYS2 UCRT64",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/msys64/ucrt64/include"
+      ],
+      "compilerPath": "C:/msys64/ucrt64/bin/gcc.exe",
+      "intelliSenseMode": "windows-gcc-x64"
+    }
+  ],
+  "version": 4
+}
