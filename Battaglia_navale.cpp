@@ -14,6 +14,7 @@ struct strGiocatori
     bool Is_prewive=false;
     bool turno =false;
     Color colore;
+    int DimNave = 1;
 }blu ,rosso;
 
 struct
@@ -27,6 +28,7 @@ struct
 struct 
 {
     const Rectangle Dimensione = {600,49,200,60};
+    const Vector2 PosTesto = {650,79};
     const std::string scritta ="Fine truno";
     const int DimTesto = 20;
 }bottone_fineTurno;
@@ -43,14 +45,15 @@ void setHitbox()
     int cellaX,cellaY;
     Vector2 posizioneCursore = GetMousePosition(), celleOffsetArry;
 
-    // Pulsante del passo turno
-    //TODO: la verifica del numero minimo di navi posizionate
-    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-    {
-        if(CheckCollisionPointRec(posizioneCursore,bottone_fineTurno.Dimensione)) 
+    // Pulsante del passo turno solo quando tutte le navi sono state schierate
+    if(giocatore->DimNave>5){
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
-            giocatore->turno=false;
-            if(ColorIsEqual(giocatore->colore,blu.colore)) rosso.turno=true;
+            if(CheckCollisionPointRec(posizioneCursore,bottone_fineTurno.Dimensione)) 
+            {
+                giocatore->turno=false;
+                if(ColorIsEqual(giocatore->colore,blu.colore)) rosso.turno=true;
+            }
         }
     }
     
@@ -75,8 +78,17 @@ void setHitbox()
         if(giocatore->Is_prewive && giocatore->prewive[cellaX][cellaY] && !giocatore->hitbox[cellaX][cellaY])   DrawRectangle(celleOffsetArry.x,celleOffsetArry.y,griglia.lCella,griglia.lCella,YELLOW);
         if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) 
         {
-            giocatore->hitbox[cellaX][cellaY] = giocatore->prewive[cellaX][cellaY];
-            giocatore->Is_prewive=false;
+            if (giocatore->hitbox[cellaX][cellaY]) 
+            {
+                giocatore->hitbox[cellaX][cellaY]=false;
+                giocatore->DimNave--;
+            }
+            else
+            {
+                giocatore->hitbox[cellaX][cellaY] = giocatore->prewive[cellaX][cellaY];
+                giocatore->DimNave++;
+                giocatore->Is_prewive=false;
+            }
         }
     }   
 }
@@ -104,11 +116,16 @@ void disegnaHitbox()
 
 void setUI()
 {
-    BeginDrawing();
-    ClearBackground(RAYWHITE);
-
-    DrawText(bottone_fineTurno.scritta.c_str(),bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.DimTesto,BLACK);
-
+    strGiocatori *giocatore = nullptr;
+    if (blu.turno) giocatore = &blu;
+    else if (rosso.turno) giocatore = &rosso;
+    
+    if (giocatore && giocatore->DimNave>5)
+    {
+        if(CheckCollisionPointRec(GetMousePosition(),bottone_fineTurno.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_RIGHT )) DrawRectangle(bottone_fineTurno.Dimensione.x+10,bottone_fineTurno.Dimensione.y+10,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
+        else DrawRectangle(bottone_fineTurno.Dimensione.x+10,bottone_fineTurno.Dimensione.y+10,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, GRAY);
+    } else DrawRectangle(bottone_fineTurno.Dimensione.x+10,bottone_fineTurno.Dimensione.y+10,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
+    DrawText(bottone_fineTurno.scritta.c_str(),bottone_fineTurno.PosTesto.x,bottone_fineTurno.PosTesto.y,bottone_fineTurno.DimTesto,BLACK);
     //Disegna griglia
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(i,49,i,549,BLACK);
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(49,i,549,i,BLACK);
