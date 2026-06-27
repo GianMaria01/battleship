@@ -28,7 +28,7 @@ struct
 struct 
 {
     const Rectangle Dimensione = {600,49,200,60};
-    const Vector2 PosTesto = {650,79};
+    const Vector2 PosTesto = {640,69};
     const std::string scritta ="Fine truno";
     const int DimTesto = 20;
 }bottone_fineTurno;
@@ -122,9 +122,9 @@ void setUI()
     
     if (giocatore && giocatore->DimNave>5)
     {
-        if(CheckCollisionPointRec(GetMousePosition(),bottone_fineTurno.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_RIGHT )) DrawRectangle(bottone_fineTurno.Dimensione.x+10,bottone_fineTurno.Dimensione.y+10,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
-        else DrawRectangle(bottone_fineTurno.Dimensione.x+10,bottone_fineTurno.Dimensione.y+10,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, GRAY);
-    } else DrawRectangle(bottone_fineTurno.Dimensione.x+10,bottone_fineTurno.Dimensione.y+10,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
+        if(CheckCollisionPointRec(GetMousePosition(),bottone_fineTurno.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_RIGHT )) DrawRectangle(bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
+        else DrawRectangle(bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, GRAY);
+    } else DrawRectangle(bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
     DrawText(bottone_fineTurno.scritta.c_str(),bottone_fineTurno.PosTesto.x,bottone_fineTurno.PosTesto.y,bottone_fineTurno.DimTesto,BLACK);
     //Disegna griglia
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(i,49,i,549,BLACK);
