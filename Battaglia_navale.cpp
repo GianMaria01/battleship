@@ -1,3 +1,7 @@
+// Battaglia_navale.cpp
+// Questo progetto utilizza raylib (https://www.raylib.com).
+// Raylib è distribuita sotto la licenza zlib/libpng (https://github.com/raysan5/raylib/blob/master/LICENSE).
+
 #include <iostream>
 #include <raylib.h>
 #include <string>
