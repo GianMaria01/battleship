@@ -6,15 +6,24 @@
 #include <raylib.h>
 #include <string>
 
+struct 
+{
+    bool Is_Overlay = false;
+    float Timer = 0.0f;
+    const float durata = 4.0f;
+}overlay;
+
+
 struct strGiocatori
 {
+    std::string nome;
     bool hitbox[10][10] = {};
     bool attachiVS[10][10] = {};
     bool prewive[10][10] = {};
     bool Is_prewive=false;
     bool turno =false;
     Color colore;
-    int DimNave = 1;
+    int DimNave = 5;
 }blu ,rosso;
 
 struct
@@ -33,21 +42,40 @@ struct
     const int DimTesto = 20;
 }bottone_fineTurno;
 
+struct 
+{
+    int NumTurno = 0;
+    bool Is_SetHitbox = true;
+}info_gioco;
+
+struct
+{
+    const int width = 1000;
+    const int height = 600;
+} schemro;
 
 void setHitbox()
 {
+
     // serve a selezionare il turno el giocatore
+    if(!info_gioco.Is_SetHitbox) return;
+
     strGiocatori *giocatore = nullptr;
     if (blu.turno) giocatore = &blu;
     else if (rosso.turno) giocatore = &rosso;
-    else if (!giocatore) return;
+    else if (!blu.turno && !rosso.turno)
+    {
+        info_gioco.Is_SetHitbox = false;
+        overlay.Is_Overlay = true;
+        return;
+    } else if (!giocatore) return;
     
     int cellaX,cellaY;
     Vector2 posizioneCursore = GetMousePosition(), celleOffsetArry;
 
     // Pulsante del passo turno solo quando tutte le navi sono state schierate
     if(giocatore->DimNave>5){
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             if(CheckCollisionPointRec(posizioneCursore,bottone_fineTurno.Dimensione)) 
             {
@@ -76,7 +104,7 @@ void setHitbox()
         giocatore->Is_prewive = true;
         giocatore->prewive[cellaX][cellaY] = true;
         if(giocatore->Is_prewive && giocatore->prewive[cellaX][cellaY] && !giocatore->hitbox[cellaX][cellaY])   DrawRectangle(celleOffsetArry.x,celleOffsetArry.y,griglia.lCella,griglia.lCella,YELLOW);
-        if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) 
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
         {
             if (giocatore->hitbox[cellaX][cellaY]) 
             {
@@ -122,23 +150,63 @@ void setUI()
     
     if (giocatore && giocatore->DimNave>5)
     {
-        if(CheckCollisionPointRec(GetMousePosition(),bottone_fineTurno.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_RIGHT )) DrawRectangle(bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
-        else DrawRectangle(bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, GRAY);
-    } else DrawRectangle(bottone_fineTurno.Dimensione.x,bottone_fineTurno.Dimensione.y,bottone_fineTurno.Dimensione.width,bottone_fineTurno.Dimensione.height, {204,204,204,255});
+        if(CheckCollisionPointRec(GetMousePosition(),bottone_fineTurno.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_LEFT )) DrawRectangleRec(bottone_fineTurno.Dimensione, {204,204,204,255});
+        else DrawRectangleRec(bottone_fineTurno.Dimensione, GRAY);
+    } else DrawRectangleRec(bottone_fineTurno.Dimensione, {204,204,204,255});
     DrawText(bottone_fineTurno.scritta.c_str(),bottone_fineTurno.PosTesto.x,bottone_fineTurno.PosTesto.y,bottone_fineTurno.DimTesto,BLACK);
     //Disegna griglia
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(i,49,i,549,BLACK);
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(49,i,549,i,BLACK);
 }
 
+void Atacchi ()
+{
+    strGiocatori *giocatore = nullptr;
+    int PosTesX = (schemro.width / 2);
+    if(!info_gioco.Is_SetHitbox)
+    {
+        if (info_gioco.NumTurno%2) 
+        {
+            giocatore = &blu;
+            PosTesX -=150;
+        }
+        else 
+        {
+            giocatore = &rosso;
+            PosTesX -=200;
+        }
+        if(!giocatore) return;
+    } else return;
+    
+    if (overlay.Is_Overlay)
+    {
+        overlay.Timer += GetFrameTime();
+
+        // Disegna l'overlay per questo frame
+        Color sfondo = giocatore->colore;
+        sfondo.a = 180;  
+        DrawRectangle(0, 0, schemro.width, schemro.height, sfondo);
+        DrawText(("Vai "+giocatore->nome+", attaca").c_str(), PosTesX, (schemro.height / 2)-40 ,40, WHITE);
+    }
+
+    // Quando il timer scade, chiudi l'overlay
+    if (overlay.Timer >= overlay.durata)
+    {
+        overlay.Is_Overlay = false;
+        overlay.Timer = 0.0f;
+    }
+}
+
 int main()
 {
     blu.colore = BLUE;
     blu.turno=true;
+    blu.nome = "blu";
     rosso.colore = RED;
+    rosso.nome = "rosso";
 
 
-    InitWindow(1000,800,"Bataglia navale");
+    InitWindow(schemro.width,schemro.height,"Bataglia navale");
     SetWindowTitle("Bataglia navale");
 
     while(!WindowShouldClose())
@@ -147,12 +215,12 @@ int main()
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
+        setUI();
         
         setHitbox();
-
         disegnaHitbox();
 
-        setUI();
+        Atacchi();
         
         EndDrawing();
     }
