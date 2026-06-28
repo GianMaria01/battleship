@@ -23,7 +23,7 @@ struct strGiocatori
     bool Is_prewive=false;
     bool turno =false;
     Color colore;
-    int DimNave = 5;
+    int DimNave = 1;
 }blu ,rosso;
 
 struct
