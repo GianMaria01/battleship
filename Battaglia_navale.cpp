@@ -162,20 +162,26 @@ void setUI()
 void Atacchi ()
 {
     strGiocatori *giocatore = nullptr;
+    strGiocatori *aversario = nullptr;
     int PosTesX = (schemro.width / 2);
+
+
+    // <------animazione-------->
     if(!info_gioco.Is_SetHitbox)
     {
-        if (info_gioco.NumTurno%2) 
+        if (info_gioco.NumTurno % 2)
         {
-            giocatore = &blu;
+            giocatore = &rosso;
+            aversario = &blu;
             PosTesX -=150;
         }
         else 
         {
-            giocatore = &rosso;
-            PosTesX -=200;
+            giocatore = &blu;
+            aversario = &rosso;
+            PosTesX -=150;
         }
-        if(!giocatore) return;
+        if(!giocatore || !aversario) return;
     } else return;
     
     if (overlay.Is_Overlay)
@@ -194,6 +200,39 @@ void Atacchi ()
     {
         overlay.Is_Overlay = false;
         overlay.Timer = 0.0f;
+    }
+
+
+    // <-------Logica attachi-------->
+    Vector2 posizioneCursore, celleOffsetArry;
+
+
+    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        posizioneCursore = GetMousePosition();
+        if(CheckCollisionPointRec(posizioneCursore,griglia.Dimensione))
+        {
+            int cellaX = (posizioneCursore.x - griglia.Dimensione.x) / griglia.lCella;
+            int cellaY = (posizioneCursore.y - griglia.Dimensione.y) / griglia.lCella;
+
+            if (cellaX >= 0 && cellaX < 10 && cellaY >= 0 && cellaY < 10)
+            {
+                giocatore->attachiVS[cellaX][cellaY] = true;
+            }
+        }
+    }
+
+    for (int y = 0; y < 10; ++y)
+    {
+        for (int x = 0; x < 10; ++x)
+        {
+            if (aversario->hitbox[x][y] && giocatore->attachiVS[x][y])
+            {
+                celleOffsetArry.x = (x + griglia.offSetArry) * griglia.lCella;
+                celleOffsetArry.y = (y + griglia.offSetArry) * griglia.lCella;
+                DrawRectangle(celleOffsetArry.x, celleOffsetArry.y, griglia.lCella, griglia.lCella, GRAY);
+            }
+        }
     }
 }
 
