@@ -27,6 +27,7 @@ struct strGiocatori
     bool turno =false;
     Color colore;
     int DimNave = 1;
+    int numColpiGiusti = 0;
     bool Is_Winner = false;
 }blu ,rosso;
 
@@ -42,7 +43,7 @@ struct
 {
     const Rectangle Dimensione = {600,49,200,60};
     const Vector2 PosTesto = {640,69};
-    const std::string scritta ="Fine truno";
+    const std::string scritta ="Pass turn";
     const int DimTesto = 20;
 }bottone_fineTurno;
 
@@ -168,7 +169,6 @@ void Atacchi ()
 {
     strGiocatori *giocatore = nullptr;
     strGiocatori *aversario = nullptr;
-    int PosTesX = (schemro.width / 2);
 
     if(!info_gioco.Is_SetHitbox)
     {
@@ -176,13 +176,11 @@ void Atacchi ()
         {
             giocatore = &rosso;
             aversario = &blu;
-            PosTesX -=150;
         }
         else 
         {
             giocatore = &blu;
             aversario = &rosso;
-            PosTesX -=150;
         }
         if(!giocatore || !aversario) return;
     } else return;
@@ -210,13 +208,15 @@ void Atacchi ()
     // <---------- Animazione cambio turno -------->
     if (anCambioTurno.Is_Overlay)
     {
+        int PosTesX = (schemro.width / 2) - 150;
+
         anCambioTurno.Timer += GetFrameTime();
 
         // Disegna l'overlay per questo frame
         Color sfondo = giocatore->colore;
         sfondo.a = 180;  
         DrawRectangle(0, 0, schemro.width, schemro.height, sfondo);
-        DrawText(("Vai "+giocatore->nome+", attaca").c_str(), PosTesX, (schemro.height / 2)-40 ,40, WHITE);
+        DrawText(("GO "+giocatore->nome+", attack").c_str(), PosTesX, (schemro.height / 2)-40 ,40, WHITE);
     }
 
     // Quando il timer scade, chiudi l'overlay
@@ -249,10 +249,19 @@ void Atacchi ()
                         anMiss.Is_Overlay = true;
                         anMiss.cellaX = cellaX;
                         anMiss.cellaY = cellaY;
-                    }
+                    } else ++giocatore->numColpiGiusti;
+                    
                 }
             }
         }
+
+    if (giocatore->numColpiGiusti == 5) 
+    {
+        info_gioco.gameOver = true;
+        giocatore->Is_Winner = true;
+        return;
+    }
+    
     }
 
         // <---------- Animazione Miss --------->
@@ -275,6 +284,7 @@ void Atacchi ()
     {
         anMiss.Is_Overlay = false;
         anMiss.Timer = 0.0f;
+        anMiss.salita = 0;
 
         ++info_gioco.NumTurno;
         anCambioTurno.Is_Overlay =true;
@@ -283,15 +293,67 @@ void Atacchi ()
 
 }
 
-// TODO Creare funzione winner
+void winner()
+{
+    if (!info_gioco.gameOver) return;
+    
+    strGiocatori *giocatore = nullptr;
+    strGiocatori *aversario = nullptr;
+
+    
+    if (blu.Is_Winner)
+    {
+        giocatore = &blu;
+        aversario = &rosso;
+    } else
+    {
+        giocatore = &rosso;
+        aversario =&blu;
+    }
+    if(!aversario || !giocatore) return;
+
+    for (int y = 0; y < 10; ++y)
+    {
+        Vector2 CellaUI;
+        for (int x = 0; x < 10; ++x)
+        {
+            
+            CellaUI.x = griglia.Dimensione.x + x * griglia.lCella;
+            CellaUI.y = griglia.Dimensione.y + y * griglia.lCella;
+            if(aversario->hitbox[x][y]) DrawRectangle(CellaUI.x,CellaUI.y,griglia.lCella,griglia.lCella, GRAY);
+            else DrawRectangle(CellaUI.x,CellaUI.y,griglia.lCella,griglia.lCella, SKYBLUE);
+        }
+    }
+
+    int PosTesX = (schemro.width / 2) - 200;
+    // Disegna l'overlay per questo frame
+    Color sfondo = giocatore->colore;
+    sfondo.a = 180;  
+    DrawRectangle(0, 0, schemro.width, schemro.height, sfondo);
+
+    // disegno corona
+    DrawTriangle({500 , 100},{450 , 200},{550 , 200},YELLOW);
+    DrawTriangle({400 , 100},{350 , 200},{450 , 200},YELLOW);
+    DrawTriangle({600 , 100},{550 , 200},{650 , 200},YELLOW);
+    DrawRectangle(350,200,300,100,YELLOW);
+
+    DrawText(("The winner is "+giocatore->nome).c_str(), PosTesX, 400 ,40, WHITE);
+
+    // Quando il timer scade, chiudi l'overlay
+    if (anCambioTurno.Timer >= anCambioTurno.durata)
+    {
+        anCambioTurno.Is_Overlay = false;
+        anCambioTurno.Timer = 0.0f;
+    }
+}
 
 int main()
 {
     blu.colore = BLUE;
     blu.turno=true;
-    blu.nome = "blu";
+    blu.nome = "blue";
     rosso.colore = RED;
-    rosso.nome = "rosso";
+    rosso.nome = "red";
 
 
     InitWindow(schemro.width,schemro.height,"Bataglia navale");
@@ -304,15 +366,14 @@ int main()
         ClearBackground(RAYWHITE);
 
         setUI();
-        
 
         // TODO creare If gameover per non far antrare più nelle funzioni 
         setHitbox();
         disegnaHitbox();
 
         Atacchi();
-        
-        // TODO Chiamre la funzione winner 
+
+        winner();
 
         EndDrawing();
     }
