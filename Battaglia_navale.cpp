@@ -6,6 +6,10 @@
 #include <raylib.h>
 #include <string>
 
+#ifdef _WIN32
+extern "C" int __stdcall FreeConsole(void);
+#endif
+
 struct 
 {
     bool Is_Overlay = false;
@@ -355,7 +359,10 @@ int main()
     rosso.colore = RED;
     rosso.nome = "red";
 
-
+    SetTraceLogLevel(LOG_NONE);
+#ifdef _WIN32
+    FreeConsole();
+#endif
     InitWindow(schemro.width,schemro.height,"Bataglia navale");
     SetWindowTitle("Bataglia navale");
 
