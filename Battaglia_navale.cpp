@@ -10,8 +10,11 @@ struct
 {
     bool Is_Overlay = false;
     float Timer = 0.0f;
-    const float durata = 4.0f;
-}overlay;
+    const float durata = 2.0f;
+    int cellaX = 0;
+    int cellaY = 0;
+    float salita = 0;
+}anCambioTurno, anMiss;
 
 
 struct strGiocatori
@@ -24,6 +27,7 @@ struct strGiocatori
     bool turno =false;
     Color colore;
     int DimNave = 1;
+    bool Is_Winner = false;
 }blu ,rosso;
 
 struct
@@ -46,6 +50,7 @@ struct
 {
     int NumTurno = 0;
     bool Is_SetHitbox = true;
+    bool gameOver = false;
 }info_gioco;
 
 struct
@@ -66,7 +71,7 @@ void setHitbox()
     else if (!blu.turno && !rosso.turno)
     {
         info_gioco.Is_SetHitbox = false;
-        overlay.Is_Overlay = true;
+        anCambioTurno.Is_Overlay = true;
         return;
     } else if (!giocatore) return;
     
@@ -165,8 +170,6 @@ void Atacchi ()
     strGiocatori *aversario = nullptr;
     int PosTesX = (schemro.width / 2);
 
-
-    // <------animazione-------->
     if(!info_gioco.Is_SetHitbox)
     {
         if (info_gioco.NumTurno % 2)
@@ -184,9 +187,30 @@ void Atacchi ()
         if(!giocatore || !aversario) return;
     } else return;
     
-    if (overlay.Is_Overlay)
+
+    // <------ Disegno griglia -------->
+
+    for (int y = 0; y < 10; ++y)
     {
-        overlay.Timer += GetFrameTime();
+        for (int x = 0; x < 10; ++x)
+        {
+            if(giocatore->attachiVS[x][y])
+            {
+                Vector2 CellaUI;
+                // TODO verificare che tutte le navi sono state colpite e dare a win al giocatore 
+                CellaUI.x = griglia.Dimensione.x + x * griglia.lCella;
+                CellaUI.y = griglia.Dimensione.y + y * griglia.lCella;
+
+                if(aversario->hitbox[x][y]) DrawRectangle(CellaUI.x,CellaUI.y,griglia.lCella,griglia.lCella, GRAY);
+                else DrawRectangle(CellaUI.x,CellaUI.y,griglia.lCella,griglia.lCella, SKYBLUE);
+            }
+        }
+    }
+
+    // <---------- Animazione cambio turno -------->
+    if (anCambioTurno.Is_Overlay)
+    {
+        anCambioTurno.Timer += GetFrameTime();
 
         // Disegna l'overlay per questo frame
         Color sfondo = giocatore->colore;
@@ -196,45 +220,70 @@ void Atacchi ()
     }
 
     // Quando il timer scade, chiudi l'overlay
-    if (overlay.Timer >= overlay.durata)
+    if (anCambioTurno.Timer >= anCambioTurno.durata)
     {
-        overlay.Is_Overlay = false;
-        overlay.Timer = 0.0f;
+        anCambioTurno.Is_Overlay = false;
+        anCambioTurno.Timer = 0.0f;
     }
-
 
     // <-------Logica attachi-------->
-    Vector2 posizioneCursore, celleOffsetArry;
 
+    int cellaX, cellaY;
 
-    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    {
-        posizioneCursore = GetMousePosition();
-        if(CheckCollisionPointRec(posizioneCursore,griglia.Dimensione))
+    if(!anCambioTurno.Is_Overlay && !anMiss.Is_Overlay)
+    {    
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            int cellaX = (posizioneCursore.x - griglia.Dimensione.x) / griglia.lCella;
-            int cellaY = (posizioneCursore.y - griglia.Dimensione.y) / griglia.lCella;
-
-            if (cellaX >= 0 && cellaX < 10 && cellaY >= 0 && cellaY < 10)
+            Vector2 posizioneMouse = GetMousePosition();
+            if(CheckCollisionPointRec(posizioneMouse,griglia.Dimensione))
             {
-                giocatore->attachiVS[cellaX][cellaY] = true;
+                cellaX = (posizioneMouse.x - griglia.Dimensione.x) / griglia.lCella;
+                cellaY = (posizioneMouse.y - griglia.Dimensione.y) / griglia.lCella;
+
+                if (!giocatore->attachiVS[cellaX][cellaY])
+                {
+                    giocatore->attachiVS[cellaX][cellaY] = true;
+                    
+                    if(!aversario->hitbox[cellaX][cellaY])
+                    {
+                        anMiss.Is_Overlay = true;
+                        anMiss.cellaX = cellaX;
+                        anMiss.cellaY = cellaY;
+                    }
+                }
             }
         }
     }
 
-    for (int y = 0; y < 10; ++y)
+        // <---------- Animazione Miss --------->
+
+    if(anMiss.Is_Overlay)
     {
-        for (int x = 0; x < 10; ++x)
-        {
-            if (aversario->hitbox[x][y] && giocatore->attachiVS[x][y])
-            {
-                celleOffsetArry.x = (x + griglia.offSetArry) * griglia.lCella;
-                celleOffsetArry.y = (y + griglia.offSetArry) * griglia.lCella;
-                DrawRectangle(celleOffsetArry.x, celleOffsetArry.y, griglia.lCella, griglia.lCella, GRAY);
-            }
-        }
+
+        anMiss.Timer += GetFrameTime();
+
+        anMiss.salita -= 0.02;
+
+        Vector2 CellaUI;
+        CellaUI.x = griglia.Dimensione.x + anMiss.cellaX * griglia.lCella;
+        CellaUI.y = griglia.Dimensione.y + anMiss.cellaY * griglia.lCella;
+
+        DrawText("Miss!", CellaUI.x, CellaUI.y  + anMiss.salita, 21, BLACK);
     }
+
+    if(anMiss.Timer>anMiss.durata)
+    {
+        anMiss.Is_Overlay = false;
+        anMiss.Timer = 0.0f;
+
+        ++info_gioco.NumTurno;
+        anCambioTurno.Is_Overlay =true;
+        return;
+    }
+
 }
+
+// TODO Creare funzione winner
 
 int main()
 {
@@ -256,11 +305,15 @@ int main()
 
         setUI();
         
+
+        // TODO creare If gameover per non far antrare più nelle funzioni 
         setHitbox();
         disegnaHitbox();
 
         Atacchi();
         
+        // TODO Chiamre la funzione winner 
+
         EndDrawing();
     }
     CloseWindow();
