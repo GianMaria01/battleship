@@ -53,6 +53,14 @@ struct
 
 struct 
 {
+    const Rectangle Dimensione = {600,129,200,60};
+    const Vector2 PosTesto = {630,149};
+    const std::string scritta ="Clean the grid";
+    const int DimTesto = 20;
+}bottone_Pulizia;
+
+struct 
+{
     int NumTurno = 0;
     bool Is_SetHitbox = true;
     bool gameOver = false;
@@ -66,7 +74,6 @@ struct
 
 void setHitbox()
 {
-
     // serve a selezionare il turno el giocatore
     if(!info_gioco.Is_SetHitbox) return;
 
@@ -79,9 +86,14 @@ void setHitbox()
         anCambioTurno.Is_Overlay = true;
         return;
     } else if (!giocatore) return;
-    
+
+    static bool orizzontale = true; // orientamento corrente della nave
+
     int cellaX,cellaY;
-    Vector2 posizioneCursore = GetMousePosition(), celleOffsetArry;
+    Vector2 posizioneCursore = GetMousePosition(), celleUI;
+
+    // Tasto destro per ruotare la nave
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) orizzontale = !orizzontale;
 
     // Pulsante del passo turno solo quando tutte le navi sono state schierate
     if(giocatore->DimNave>5){
@@ -102,38 +114,87 @@ void setHitbox()
         cellaX =(posizioneCursore.x / griglia.lCella)-griglia.offSetArry;
         cellaY =(posizioneCursore.y / griglia.lCella)-griglia.offSetArry;
 
-        celleOffsetArry.x=(cellaX+griglia.offSetArry)*griglia.lCella;
-        celleOffsetArry.y=(cellaY+griglia.offSetArry)*griglia.lCella;
-        
-        //Serve ad azzerere la prewive ogni volta altrimenti rimangono gli scarti di quando ci si passa semplicemente sopra
-        for (int y = 0; y < 10; ++y)
-            for (int x = 0; x < 10; ++x)
-                giocatore->prewive[x][y] = false;
-        
-        //TODO: con l'aggiunta delle navi conforme predefinite mdoiificare 
-        giocatore->Is_prewive = true;
-        giocatore->prewive[cellaX][cellaY] = true;
-        if(giocatore->Is_prewive && giocatore->prewive[cellaX][cellaY] && !giocatore->hitbox[cellaX][cellaY])   DrawRectangle(celleOffsetArry.x,celleOffsetArry.y,griglia.lCella,griglia.lCella,YELLOW);
-        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
+        // <----- Calcolo e disegno anteprima nave (DimNave celle) ----->
+        bool posizionamentoValido = true;
+
+        if (orizzontale)
         {
-            if (giocatore->hitbox[cellaX][cellaY]) 
+            if (cellaX + giocatore->DimNave > 10) posizionamentoValido = false;
+        }
+        else
+        {
+            if (cellaY + giocatore->DimNave > 10) posizionamentoValido = false;
+        }
+
+        if (posizionamentoValido && giocatore->DimNave <= 5)
+        {
+            for (int i = 0; i < giocatore->DimNave; ++i)
             {
-                giocatore->hitbox[cellaX][cellaY]=false;
-                giocatore->DimNave--;
-            }
-            else
-            {
-                giocatore->hitbox[cellaX][cellaY] = giocatore->prewive[cellaX][cellaY];
-                giocatore->DimNave++;
-                giocatore->Is_prewive=false;
+                int px = orizzontale ? cellaX + i : cellaX;
+                int py = orizzontale ? cellaY : cellaY + i;
+
+                if (px < 0 || px >= 10 || py < 0 || py >= 10) { posizionamentoValido = false; break; }
+                if (giocatore->hitbox[px][py]) { posizionamentoValido = false; break; }
             }
         }
-    }   
+
+        if (posizionamentoValido && giocatore->DimNave <= 5)
+        {
+            for (int i = 0; i < giocatore->DimNave; ++i)
+            {
+                int px = orizzontale ? cellaX + i : cellaX;
+                int py = orizzontale ? cellaY : cellaY + i;
+
+                celleUI.x=(px+griglia.offSetArry)*griglia.lCella;
+                celleUI.y=(py+griglia.offSetArry)*griglia.lCella;
+
+                giocatore->prewive[px][py] = true;
+                DrawRectangle(celleUI.x,celleUI.y,griglia.lCella,griglia.lCella,YELLOW);
+            }
+
+            // Conferma piazzamento al click
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                for (int i = 0; i < giocatore->DimNave; ++i)
+                {
+                    int px = orizzontale ? cellaX + i : cellaX;
+                    int py = orizzontale ? cellaY : cellaY + i;
+
+                    giocatore->hitbox[px][py] = true;
+                    giocatore->prewive[px][py] = false;
+                }
+                ++giocatore->DimNave;
+            }
+        }
+
+        // Pulisce eventuali celle di anteprima rimaste da frame precedenti non più valide
+        for(int x = 0; x < 10; ++x)
+            for (int y = 0; y < 10; ++y) 
+            {
+                if(giocatore->prewive[x][y] && !(posizionamentoValido && giocatore->DimNave <= 5))
+                {
+                    giocatore->prewive[x][y] = false;
+                }
+            }
+    }
+    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        if(CheckCollisionPointRec(posizioneCursore,bottone_Pulizia.Dimensione))
+        {
+            if(giocatore->DimNave > 1)
+            {
+                giocatore->DimNave = 1;
+                for(int x = 0; x < 10; ++x)
+                    for (int y = 0; y < 10;++y)
+                    giocatore->hitbox[x][y] = false;
+            }
+        }
+    }
 }
 
 void disegnaHitbox()
 {
-    Vector2 celleOffsetArry;
+    Vector2 celleUI;
     strGiocatori *giocatore = nullptr;
     if (blu.turno) giocatore = &blu;
     else if (rosso.turno) giocatore = &rosso;
@@ -143,10 +204,10 @@ void disegnaHitbox()
     {
         for(int cellaX=0;cellaX<10;++cellaX)
         {
-            celleOffsetArry.x=(cellaX+griglia.offSetArry)*griglia.lCella;
-            celleOffsetArry.y=(cellaY+griglia.offSetArry)*griglia.lCella;
+            celleUI.x=(cellaX+griglia.offSetArry)*griglia.lCella;
+            celleUI.y=(cellaY+griglia.offSetArry)*griglia.lCella;
 
-            if(giocatore->hitbox[cellaX][cellaY]) DrawRectangle(celleOffsetArry.x,celleOffsetArry.y,griglia.lCella,griglia.lCella,giocatore->colore);
+            if(giocatore->hitbox[cellaX][cellaY]) DrawRectangle(celleUI.x,celleUI.y,griglia.lCella,griglia.lCella,giocatore->colore);
         }
     }
     
@@ -157,13 +218,21 @@ void setUI()
     strGiocatori *giocatore = nullptr;
     if (blu.turno) giocatore = &blu;
     else if (rosso.turno) giocatore = &rosso;
+    if(!giocatore) return;
     
-    if (giocatore && giocatore->DimNave>5)
+    if (giocatore->DimNave>5)
     {
         if(CheckCollisionPointRec(GetMousePosition(),bottone_fineTurno.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_LEFT )) DrawRectangleRec(bottone_fineTurno.Dimensione, {204,204,204,255});
         else DrawRectangleRec(bottone_fineTurno.Dimensione, GRAY);
     } else DrawRectangleRec(bottone_fineTurno.Dimensione, {204,204,204,255});
     DrawText(bottone_fineTurno.scritta.c_str(),bottone_fineTurno.PosTesto.x,bottone_fineTurno.PosTesto.y,bottone_fineTurno.DimTesto,BLACK);
+
+    if(giocatore->DimNave > 1)
+    {
+        if(CheckCollisionPointRec(GetMousePosition(),bottone_Pulizia.Dimensione) && !IsMouseButtonDown(MOUSE_BUTTON_LEFT )) DrawRectangleRec(bottone_Pulizia.Dimensione, {204,204,204,255});
+        else DrawRectangleRec(bottone_Pulizia.Dimensione, GRAY);
+    } else DrawRectangleRec(bottone_Pulizia.Dimensione, {204,204,204,255});
+    DrawText(bottone_Pulizia.scritta.c_str(),bottone_Pulizia.PosTesto.x,bottone_Pulizia.PosTesto.y,bottone_Pulizia.DimTesto,BLACK);
     //Disegna griglia
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(i,49,i,549,BLACK);
     for(int i=49;i<550;i+=griglia.lCella) DrawLine(49,i,549,i,BLACK);
@@ -259,7 +328,7 @@ void Atacchi ()
             }
         }
 
-    if (giocatore->numColpiGiusti == 5) 
+    if (giocatore->numColpiGiusti == 15) 
     {
         info_gioco.gameOver = true;
         giocatore->Is_Winner = true;
