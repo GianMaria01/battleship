@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -Wall -O2 -I C:/raylib/raylib/src -g
-LIBS = -L C:/raylib/raylib/src -lraylib -lopengl32 -lgdi32 -lwinmm -static-libgcc -static-libstdc++
+LIBS = -L C:/raylib/raylib/src -lraylib -lopengl32 -lgdi32 -lwinmm
 LDFLAGS = -mwindows
 
 SRC = Battaglia_navale.cpp
