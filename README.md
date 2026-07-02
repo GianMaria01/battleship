@@ -12,7 +12,7 @@ Classic Battleship gameplay featuring:
 
 ## Download
 
-Download the latest playable Windows build on [itch.io](https://gian-maria01.itch.io/battleship)
+Download the zip file and extract it wherevery you want adn lunch teh exe file
 
 ### Instructions
 
